@@ -1,2 +1,3 @@
 ;Hello world lisp program
-(print "Hello World")
+'(Hola)
+(print (+ -1 -2 -3))
