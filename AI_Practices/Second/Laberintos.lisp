@@ -17,12 +17,15 @@
       (setq renglones (read stream nil nil))
       (setq columnas (read stream nil nil))
       ;;Se obtiene la información de la entrada del laberinto y su salida =========== OPCIONAL
+      ;;lectura en falso
+      (read-line stream nil nil)
+      ;;lectura de las entradas y salidas del laberinto
       (setq *Entrada* (read stream nil nil))
       (setq *Salida* (read stream nil nil))
       (setf *Laberinto* (adjust-array *Laberinto* (list renglones columnas)))
-      
+      ;;lectura en falso
       (read-line stream nil nil)
-      
+      ;; se carga la información en el arreglo
       (loop for renglon from 0 below renglones do
         (loop for columna from 0 below columnas do
           (setf (aref *Laberinto* renglon columna) (read stream nil nil))
@@ -140,7 +143,7 @@
                                                  (Nodo-idNodo Nodo) 
                                                  (valoraCosto Nodo (list (- renglon 1) columna) algoritmo) 
                                                  'SinVisitar 
-                                                 'Norte 
+                                                 'arriba 
                                                  (list (- renglon 1) columna))
                                                ) 
                                              listaNodosValidos))
@@ -151,7 +154,7 @@
                                                  (Nodo-idNodo Nodo) 
                                                  (valoraCosto Nodo (list (+ renglon 1) columna) algoritmo) 
                                                  'SinVisitar 
-                                                 'Sur 
+                                                 'abajo 
                                                  (list (+ renglon 1) columna))
                                                ) 
                                              listaNodosValidos))
@@ -162,7 +165,7 @@
                                                  (Nodo-idNodo Nodo) 
                                                  (valoraCosto Nodo (list renglon (+ columna 1)) algoritmo) 
                                                  'SinVisitar 
-                                                 'Este 
+                                                 'derecha 
                                                  (list renglon (+ columna 1)))
                                                ) 
                                              listaNodosValidos))
@@ -173,7 +176,7 @@
                                                  (Nodo-idNodo Nodo) 
                                                  (valoraCosto Nodo (list renglon (- columna 1)) algoritmo) 
                                                  'SinVisitar 
-                                                 'Oeste 
+                                                 'izquierda 
                                                  (list renglon (- columna 1)))
                                                ) 
                                              listaNodosValidos))
@@ -195,24 +198,20 @@
           (setq obstaculos (aref *Laberinto* (- renglon 1) (+ columna 1)))
           (if (or
                 (and 
-                  (equal (find 2 obstaculosNodoActual) 2)   
-                  (not (equal (find 4 obstaculos) 4))) 
-                (and 
-                  (not (equal (find 2 obstaculosNodoActual) 2))
-                  (not (equal (find 3 obstaculos) 3))) 
-                (and
+                  (not (equal (find 1 obstaculosNodoActual) 1))
                   (not (equal (find 4 obstaculos) 4))
-                  (not (equal (find 1 obstaculosNodoActual) 1))) 
-                (and 
-                  (equal (find 1 obstaculosNodoActual) 1) 
-                  (not (equal (find 3 obstaculos) 3))) 
+                  )
+                (and
+                  (not (equal (find 2 obstaculosNodoActual) 2))
+                  (not (equal (find 3 obstaculos) 3))
+                  )
               )
               (list 
                 (crearNodo 
                   (Nodo-idNodo Nodo) 
                   (valoraCosto Nodo (list (- renglon 1) (+ columna 1)) algoritmo)
                   'SinVisitar
-                  'Noreste
+                  'arriba-derecha
                   (list (- renglon 1) (+ columna 1))
                   )
                 )
@@ -220,7 +219,7 @@
         )
         (error (e) 
           ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-          (print (string "Error: No se puede acceder a esa posicion => Noreste "))
+          (print (string "Error: No se puede acceder a esa posicion => arriba-derecha "))
           nil
         )
       )
@@ -238,24 +237,20 @@
           (setq obstaculos (aref *Laberinto* (- renglon 1) (- columna 1)))
           (if (or
                 (and 
-                  (equal (find 4 obstaculosNodoActual) 4)   
-                  (not (equal (find 2 obstaculos) 2))) 
-                (and 
-                  (not (equal (find 4 obstaculosNodoActual) 4))
-                  (not (equal (find 3 obstaculos) 3))) 
-                (and
+                  (not (equal (find 1 obstaculosNodoActual) 1))
                   (not (equal (find 2 obstaculos) 2))
-                  (not (equal (find 1 obstaculosNodoActual) 1))) 
-                (and 
-                  (equal (find 1 obstaculosNodoActual) 1) 
-                  (not (equal (find 3 obstaculos) 3))) 
+                  )
+                (and
+                  (not (equal (find 4 obstaculosNodoActual) 4))
+                  (not (equal (find 3 obstaculos) 3))
+                  )
               )
               (list 
                 (crearNodo 
                   (Nodo-idNodo Nodo) 
                   (valoraCosto Nodo (list (- renglon 1) (- columna 1)) algoritmo)
                   'SinVisitar 
-                  'Noroeste
+                  'arriba-izquierda
                   (list (- renglon 1) (- columna 1))
                   )
                   
@@ -264,7 +259,7 @@
         )
         (error (e) 
           ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-          (print (string "Error: No se puede acceder a esa posicion => Noroeste "))
+          (print (string "Error: No se puede acceder a esa posicion => arriba-izquierda "))
           nil
         )
       )
@@ -283,24 +278,20 @@
           ;(and (not (equal (find 'Oeste obstaculos) 'Oeste)) (not (equal (find 'Norte obstaculos) 'Norte)))
           (if (or
                 (and 
-                  (equal (find 2 obstaculosNodoActual) 2)   
-                  (not (equal (find 4 obstaculos) 4))) 
-                (and 
-                  (not (equal (find 2 obstaculosNodoActual) 2))
-                  (not (equal (find 1 obstaculos) 1))) 
-                (and
+                  (not (equal (find 3 obstaculosNodoActual) 3))
                   (not (equal (find 4 obstaculos) 4))
-                  (not (equal (find 2 obstaculosNodoActual) 2))) 
-                (and 
-                  (equal (find 2 obstaculosNodoActual) 2) 
-                  (not (equal (find 1 obstaculos) 1))) 
+                  )
+                (and
+                  (not (equal (find 2 obstaculosNodoActual) 2))
+                  (not (equal (find 1 obstaculos) 1))
+                  )
               )
               (list 
                 (crearNodo 
                   (Nodo-idNodo Nodo) 
                   (valoraCosto Nodo (list (+ renglon 1) (+ columna 1)) algoritmo)
                   'SinVisitar 
-                  'Sureste
+                  'abajo-derecha
                   (list (+ renglon 1) (+ columna 1))
                   )
                 )
@@ -308,7 +299,7 @@
         )
         (error (e) 
           ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-          (print (string "Error: No se puede acceder a esa posicion => Sureste "))
+          (print (string "Error: No se puede acceder a esa posicion => abajo-derecha "))
           nil
         )
       )
@@ -329,41 +320,33 @@
           #|
           (or
             (and 
-              (equal (find 2 obstaculosNodoActual) 2) 
-              (not (equal (find 4 obstaculos) 4))) 
-            (and 
-              (not (equal (find 2 obstaculosNodoActual) 2))
-              (not (equal (find 1 obstaculos) 1))) 
-            (and
-              (not (equal (find 4 obstaculos) 4))
-              (not (equal (find 3 obstaculosNodoActual) 3))) 
-            (and 
-              (equal (find 3 obstaculosNodoActual) 3) 
-              (not (equal (find 1 obstaculos) 1))) 
+              (not (equal (find 4 obstaculosNodoActual) 4))
+              (not (equal (find 1 obstaculos) 1))
               )
+            (and
+              (not (equal (find 3 obstaculosNodoActual) 3))
+              (not (equal (find 2 obstaculos) 2))
+              )
+             )
           |#
              
           ;(and (not (equal (find 'Este obstaculos) 'Este)) (not (equal (find 'Norte obstaculos) 'Norte)))
           (if (or
                 (and 
-                  (equal (find 'Este obstaculosNodoActual) 'Este) 
-                  (not (equal (find 'Oeste obstaculos) 'Oeste))) 
-                (and 
-                  (not (equal (find 'Este obstaculosNodoActual) 'Este))
-                  (not (equal (find 'Norte obstaculos) 'Norte))) 
+                  (not (equal (find 4 obstaculosNodoActual) 4))
+                  (not (equal (find 1 obstaculos) 1))
+                  )
                 (and
-                  (not (equal (find 'Oeste obstaculos) 'Oeste))
-                  (not (equal (find 'Sur obstaculosNodoActual) 'Sur))) 
-                (and 
-                  (equal (find 'Sur obstaculosNodoActual) 'Sur) 
-                  (not (equal (find 'Norte obstaculos) 'Norte))) 
-              ) 
+                  (not (equal (find 3 obstaculosNodoActual) 3))
+                  (not (equal (find 2 obstaculos) 2))
+                  )
+              )
               (list 
                 (crearNodo 
                   (Nodo-idNodo Nodo) 
                   (valoraCosto Nodo (list (+ renglon 1) (- columna 1)) algoritmo)
                   'SinVisitar 
-                  'Suroeste
+                  'abajo-izquierda
                   (list (+ renglon 1) (- columna 1))
                   )
                 )
@@ -371,7 +354,7 @@
         )
         (error (e) 
           ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-          (print (string "Error: No se puede acceder a esa posicion => Suroeste "))
+          (print (string "Error: No se puede acceder a esa posicion => abajo-izquierda "))
           nil
         )
       )
@@ -380,7 +363,7 @@
 ;;==================================================================================
 ;;Pruebas
 ;;==================================================================================
-(defvar nodoPrueba (crearNodo nil 7 'Visitado nil (list 5 4)))
+(defvar nodoPrueba (crearNodo nil 7 'Visitado nil (list 3 5)))
 ;(defvar nodoPrueba2 (crearNodo  nil 71 nil nil))
 ;(print nodoPrueba)
 ;(agregarNodoListaAbierta nodoPrueba 'queue)
@@ -392,24 +375,8 @@
 ;(print '------------------------)
 ;(print *openList*)
 ;(print *Laberinto*)
-(read-datafile (string "~/workspace/sample/laberintoPrueba.txt"))
+(read-datafile (string "./laberintoPrueba.txt"))
 ;(print (aref *Laberinto* 5 4))
 (print (obtenerMovimientosNodo nodoPrueba))
-;(print *Laberinto*)
-;(print *closedList*)
-
-;(defvar listaTest '(43 2 1 3 4 5 6 7 8))
-;(print listaTest)
-#|
-(while (> (length listaTest) 0)
- (cond 
-   ((equal (first listaTest) 1)
-      (setq listaTest (append (list 27 77 07 17 127) (rest listaTest)))
-    )
-   (T
-      (print (first listaTest))
-      (setq listaTest (rest listaTest))
-     )
-   )
- )
-|#
+(print *Entrada*)
+(print *Salida*)
