@@ -8,10 +8,10 @@
 (defvar *contadorNodo* 0)
 (defvar *closedList* nil)
 (defvar *openList* nil)
-(defvar *closedList* nil)
 (defvar *NivelDelArbol* 0)
 (defvar *EstadosNodos* '(SinVisitar Visitado EnEspera))
 (defvar *Solucion* nil)
+(defvar *debug* nil)
 ;; SE CAMBIO Norte = 1, Sur = 3, Este = 2, Oeste = 4
 ;; Se define la casilla de inicio y la casilla de fin
 (defvar *Entrada* (list 0 0))
@@ -76,7 +76,9 @@
         )
      )
     (T
-      (print (string "No se puede obtener la distancia manhattan, los vectores deben tener las mismas dimensiones"))
+      (if (not (null *debug*))
+          (print (string "No se puede obtener la distancia manhattan, los vectores deben tener las mismas dimensiones"))
+          )
       0
       )
     )
@@ -97,17 +99,6 @@
       )
     )
   )
-(defun obtenerNodo (lista idNodoABuscar)
-  (let ((nodoEncontrado nil))
-    (loop for nodo in lista do
-        (if 
-          (equal (Nodo-idNodo nodo) idNodoABuscar)
-          (setq nodoEncontrado nodo)
-          )
-      )
-      nodoEncontrado
-    )
-  )
 (defun crearNodo (&optional (ancestro nil) (costo 0) (estado nil) (accion nil) (posicion (list 0 0)) (nivel 0))
   ; El id se auto incrementa en 1 cada que se crea un nodo nuevo
   ; El ancestro hace referencia al id del nodo de donde se llego al nodo actual
@@ -116,9 +107,9 @@
   ; La accion estará denotada por el paso que se tuvo que realizar para llegar al nodo
   ; La posicion del nodo estara dado en coordenadas (renglon columna) para poder ubicarlo en el laberinto
   (incf *contadorNodo* 1)
-  (make-Nodo :idNodo *contadorNodo* :ancestroNodo ancestro :costoNodo costo :estadoNodo estado :accionNodo accion :posicionNodo posicion :nivelNodo nivel)
+  (make-Nodo :idNodo *contadorNodo* :ancestroNodo ancestro :costoNodo costo :estadoNodo estado :accionNodo accion :posicionNodo posicion :nivelNodo (+ nivel 1))
   )
-(defun agregarNodoListaAbierta (nodo &optional modo)
+(defun agregarNodoListaAbierta (nodo &optional modo tipoOrdenamiento)
   (cond
     ((equal modo 'stack)
       (setf *openList* (append-if :lista *openList* :elemento nodo )) 
@@ -127,9 +118,17 @@
       (setf *openList* (prepend-if :lista *openList* :elemento nodo))
       )
    )
+  (cond
+    ((equal tipoOrdenamiento 'costoNodo)
+      (setf *openList* (sort *openList* #'< :key #'Nodo-costoNodo))   
+     )
+    (T
+     (setf *openList* (sort *openList* #'< :key #'Nodo-idNodo))
+     )
+    )
  )
 (defun agregarNodoListaCerrada(nodo)
-  (append (list nodo) *closedList*)
+  (setq *closedList* (append *closedList* (list nodo)))
   ;(setf *openList* (delete-if #'(lambda (x) (equal x nodo)) *openList*)) ;;Se quita la opción por que se eliminaba al nodo de la lista abierta, cosa que hace el algoritmo en sí
   )
 (defun valoraCosto (NodoPadre CasillaObjetivo &optional (algoritmo nil) )
@@ -181,13 +180,17 @@
                                                  (valoraCosto Nodo (list (- renglon 1) columna) algoritmo) 
                                                  'SinVisitar 
                                                  'arriba 
-                                                 (list (- renglon 1) columna))
+                                                 (list (- renglon 1) columna)
+                                                 (Nodo-nivelNodo Nodo)
+                                                 )
                                                ) 
                                              listaNodosValidos)) 
                 )
                 (error (e) 
                   ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-                  (print (string "Error: No se puede acceder a esa posicion => arriba"))
+                  (if (not (null *debug*))
+                      (print (string "Error: No se puede acceder a esa posicion => arriba"))
+                      )
                   nil
                 )
               )
@@ -202,13 +205,17 @@
                                                  (valoraCosto Nodo (list (+ renglon 1) columna) algoritmo) 
                                                  'SinVisitar 
                                                  'abajo 
-                                                 (list (+ renglon 1) columna))
+                                                 (list (+ renglon 1) columna)
+                                                 (Nodo-nivelNodo Nodo)
+                                                 )
                                                ) 
                                              listaNodosValidos))   
                 )
                 (error (e) 
                   ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-                  (print (string "Error: No se puede acceder a esa posicion => abajo"))
+                  (if (not (null *debug*))
+                      (print (string "Error: No se puede acceder a esa posicion => abajo"))
+                      )
                   nil
                 )
               )
@@ -223,13 +230,18 @@
                                                  (valoraCosto Nodo (list renglon (+ columna 1)) algoritmo) 
                                                  'SinVisitar 
                                                  'derecha 
-                                                 (list renglon (+ columna 1)))
+                                                 (list renglon (+ columna 1))
+                                                 (Nodo-nivelNodo Nodo)
+                                                 )
                                                ) 
                                              listaNodosValidos))   
                 )
                 (error (e) 
                   ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-                  (print (string "Error: No se puede acceder a esa posicion => derecha"))
+                  (if (not (null *debug*))
+                      (print (string "Error: No se puede acceder a esa posicion => derecha"))
+                      )
+                  
                   nil
                 )
               )
@@ -244,13 +256,17 @@
                                                  (valoraCosto Nodo (list renglon (- columna 1)) algoritmo) 
                                                  'SinVisitar 
                                                  'izquierda 
-                                                 (list renglon (- columna 1)))
+                                                 (list renglon (- columna 1))
+                                                 (Nodo-nivelNodo Nodo)
+                                                 )
                                                ) 
                                              listaNodosValidos))   
                 )
                 (error (e) 
                   ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-                  (print (string "Error: No se puede acceder a esa posicion => izquierda"))
+                  (if (not (null *debug*))
+                    (print (string "Error: No se puede acceder a esa posicion => izquierda"))
+                  )
                   nil
                 )
               )
@@ -287,13 +303,16 @@
                   'SinVisitar
                   'arriba-derecha
                   (list (- renglon 1) (+ columna 1))
+                  (Nodo-nivelNodo Nodo)
                   )
                 )
               ) 
         )
         (error (e) 
           ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-          (print (string "Error: No se puede acceder a esa posicion => arriba-derecha "))
+          (if (not (null *debug*))
+            (print (string "Error: No se puede acceder a esa posicion => arriba-derecha "))
+          )
           nil
         )
       )
@@ -326,6 +345,7 @@
                   'SinVisitar 
                   'arriba-izquierda
                   (list (- renglon 1) (- columna 1))
+                  (Nodo-nivelNodo Nodo)
                   )
                   
                 )
@@ -333,7 +353,9 @@
         )
         (error (e) 
           ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-          (print (string "Error: No se puede acceder a esa posicion => arriba-izquierda "))
+          (if (not (null *debug*))
+            (print (string "Error: No se puede acceder a esa posicion => arriba-izquierda "))
+            )
           nil
         )
       )
@@ -367,13 +389,16 @@
                   'SinVisitar 
                   'abajo-derecha
                   (list (+ renglon 1) (+ columna 1))
+                  (Nodo-nivelNodo Nodo)
                   )
                 )
               ) 
         )
         (error (e) 
           ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-          (print (string "Error: No se puede acceder a esa posicion => abajo-derecha "))
+          (if (not (null *debug*))
+            (print (string "Error: No se puede acceder a esa posicion => abajo-derecha "))
+            )
           nil
         )
       )
@@ -413,7 +438,9 @@
         )
         (error (e) 
           ;nil; no puede realizarse el movimiento por que se sale del arreglo (laberinto)
-          (print (string "Error: No se puede acceder a esa posicion => abajo-izquierda "))
+          (if (not (null *debug*))
+            (print (string "Error: No se puede acceder a esa posicion => abajo-izquierda "))
+            )
           nil
         )
       )
@@ -430,63 +457,84 @@
   )
 )
 ;==================================================================================
-(defun rastreaSolucion (NodoFinal)
-  (if 
-    (not (equal (Nodo-ancestro NodoFinal) nil)) ;; Aun no se llega al nodo origen
-    (append *Solucion* (Nodo-accion NodoFinal) (rastreaSolucion (obtenerNodo *closedList* (Nodo-ancestro NodoFinal))))
+(defun obtenerNodo (lista idNodoABuscar)
+  (let ((nodoEncontrado nil))
+    (loop for nodo in lista do
+          (if (equal (Nodo-idNodo nodo) idNodoABuscar)
+              (return-from obtenerNodo nodo)
+              )
+      )
+      
     )
+  )
+(defun rastreaSolucion (nodoARastrear)
+;  (if 
+;    (not (equal (Nodo-ancestroNodo nodoARastrear) nil)) ;; Aun no se llega al nodo origen
+;    (cons *Solucion* 
+;          (Nodo-accionNodo nodoARastrear) 
+;          (rastreaSolucion 
+;            (obtenerNodo *closedList* (Nodo-ancestroNodo nodoARastrear))
+;            )
+;          )
+;    )
+  ;(return-from rastreaSolucion *Solucion*)
+    ;Se guarda la acción con la que se llego
+    (setq *Solucion* (append *Solucion* (list (Nodo-accionNodo nodoARastrear))))
+    ;(print nodoARastrear)
+    ;(print '-------------------------------------------------------------)
+    (let ((bandera T) (nodoAux nil))
+      (setq nodoAux (obtenerNodo *closedList* (Nodo-ancestroNodo nodoARastrear)))
+      ;(print nodoAux)
+      ;(print '------------------------)
+      (while 
+        (not (equal (Nodo-ancestroNodo nodoAux) nil))
+          (setq *Solucion* (append *Solucion* (list (Nodo-accionNodo nodoAux))))    
+          (setq nodoAux (obtenerNodo *closedList* (Nodo-ancestroNodo nodoAux)))          
+        )
+      )
+    ;(print *contadorNodo*)
   )
 ;;==================================================================================
 ;;Algoritmos de Busqueda
 ;;==================================================================================
-(defun breadth_first_search (Fin)
-  (let ((nodoInicial nil) (nodoAux nil) (nodoHijo nil) (movimientosDelNodo nil))
-    ;(defun crearNodo (&optional (ancestro nil) (costo 0) (estado nil) (accion nil) (posicion (list 0 0)) (nivel 0))
-    (setq nodoInicial (crearNodo nil 0 'SinVisitar nil *Entrada* *NivelDelArbol*)) ;;Se obtiene el nodo inicial 
-    (agregarNodoListaAbierta nodoInicial 'queue);;Se anade el nodo a la frontera de busqueda 
-    (cond
-      ((equal (Nodo-posicionNodo nodoInicial) (Nodo-posicionNodo Fin));El nodo que evaluo es igual al nodo destino??? entonces rastrear la solucion
-       (rastreaSolucion Fin)
-       )
-      (T ;;Se procede a explorar el arbol de posibilidades
-         (while 
-              (not (equal (length *openList*) 0))
-                (if 
-                  (isEmpty *openList*)
-                    ;(return-from breadth_first_search nil) ;;No se encontro la solucion
-                    (print (string "No Se encontró la solución"))
-                  )
-                ;;Se procede con la ejecucion del algoritmo
-                (setq nodoAux (pop *openList*)) ;;Se saca el nodo de la lista abierta 
-                ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
-                ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
-                ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
-                ;(print (first *openList*))
-                ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
-                ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
-                ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
-                (agregarNodoListaCerrada nodoAux);;Se aniade el nodo de la lista cerrada
-                (setq movimientosDelNodo (obtenerMovimientosNodo nodoAux))
-                (loop for movimiento in movimientosDelNodo do
-                      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)
-                      ;(print movimiento)
-                      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)
-                      (setq nodoHijo movimiento)
-                      (if
-                         (not 
-                           (or
-                             (equal (find nodoHijo *openList*) nodoHijo)
-                             (equal (find nodoHijo *closedList*) nodoHijo) 
-                             ))
-                         (if 
-                           (equal (Nodo-posicionNodo nodoHijo) (Nodo-posicionNodo Fin)) ;;Se llego a una solución
-                           (rastreaSolucion Fin)
-                           )
-                        )
-                      (agregarNodoListaAbierta nodoHijo 'queue)
-                  )
-           )
+(defun breadth_first_search (nodoDestino)
+  (agregarNodoListaAbierta (crearNodo nil 0 'SinVisitar nil *Entrada* *NivelDelArbol*) 'queue);;Se anade el nodo a la frontera de busqueda   
+  (let ((nodoAux nil) (movimientosValidos nil)) 
+    (while (not (null *openList*))
+      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
+      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
+      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
+      (setq nodoAux (pop *openList*)) ;;se obtiene el único elemento de la lista abierta
+      ;(print '********************************************)
+      ;(print 'nodoAux)
+      ;(print nodoAux)
+      (setq movimientosValidos (obtenerMovimientosNodo nodoAux));;se obtienen los movimientos basicos del nodo
+      (cond
+        ((equal (Nodo-posicionNodo nodoAux) (Nodo-posicionNodo nodoDestino))
+         (rastreaSolucion nodoAux)
+          (return-from breadth_first_search *Solucion*)
+         )
         )
+      ;;
+      (loop for nodoVecino in movimientosValidos do
+        (cond
+          ((not (numberp (position nodoVecino *openList*))) ;;Si no se encuentra en la lista abierta se añade
+            (agregarNodoListaAbierta nodoVecino 'queue)           
+            )
+          )
+        )
+      (agregarNodoListaCerrada nodoAux);;El nodo que fue expandido se agrega a la lista cerrada
+      ;(print '********************************************)
+      ;(print 'ListaAbierta)
+      ;(print *openList*)
+      ;(print '********************************************)
+      ;(print 'ListaCerrada)
+      ;(print *closedList*)
+      ;(print '********************************************)
+      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
+      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
+      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
+      ;(read-line)    
       )
     )
   )
@@ -503,7 +551,8 @@
 ;(agregarNodolistaCerrada nodoPrueba)
 ;(print *openList*)
 ;(print *Laberinto*)
-(read-datafile (string "./laberintoCodificado.txt"))
+(read-datafile (string "./labCodificado2.txt"))
+;(read-datafile (string "/home/alberto/Desktop/salida.txt"))
 ;(print *Entrada*)
 ;(print *Salida*)
 (defvar nodoPrueba (crearNodo nil 7 'SinVisitar nil *Salida*))
@@ -516,5 +565,8 @@
 ;(print '-----------------------------------------------------------------------------------)
 ;(print '-----------------------------------------------------------------------------------)
 ;(print (aref *Laberinto* 5 4))
-(print (breadth_first_search nodoPrueba))
-(print *Solucion*)
+;(print (breadth_first_search nodoPrueba))
+(breadth_first_search nodoPrueba)
+(print (reverse *Solucion*))
+;(print *closedList*)
+;(print (obtenerNodo *closedList* 23))
