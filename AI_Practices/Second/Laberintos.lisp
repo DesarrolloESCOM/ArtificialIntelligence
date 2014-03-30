@@ -497,17 +497,17 @@
 ;;==================================================================================
 ;;Algoritmos de Busqueda
 ;;==================================================================================
+
+;;
+;;  BUSQUEDA EN AMPLITUD
+;;
 (defun breadth_first_search (nodoDestino)
   (agregarNodoListaAbierta (crearNodo nil 0 'SinVisitar nil *Entrada* *NivelDelArbol*) 'queue);;Se anade el nodo a la frontera de busqueda   
   (let ((nodoAux nil) (movimientosValidos nil)) 
     (while (not (null *openList*))
-      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
-      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
-      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
+
       (setq nodoAux (pop *openList*)) ;;se obtiene el único elemento de la lista abierta
-      ;(print '********************************************)
-      ;(print 'nodoAux)
-      ;(print nodoAux)
+      (agregarNodoListaCerrada nodoAux);;El nodo que fue expandido se agrega a la lista cerrada   
       (setq movimientosValidos (obtenerMovimientosNodo nodoAux));;se obtienen los movimientos basicos del nodo
       (cond
         ((equal (Nodo-posicionNodo nodoAux) (Nodo-posicionNodo nodoDestino))
@@ -518,26 +518,17 @@
       ;;
       (loop for nodoVecino in movimientosValidos do
         (cond
-          ((not (numberp (position nodoVecino *openList*))) ;;Si no se encuentra en la lista abierta se añade
+          ((not (or (numberp (position nodoVecino *openList*)) (numberp (position nodoVecino *closedList*))))  ;;Si no se encuentra en la lista abierta se añade
             (agregarNodoListaAbierta nodoVecino 'queue)           
             )
           )
         )
-      (agregarNodoListaCerrada nodoAux);;El nodo que fue expandido se agrega a la lista cerrada
-      ;(print '********************************************)
-      ;(print 'ListaAbierta)
-      ;(print *openList*)
-      ;(print '********************************************)
-      ;(print 'ListaCerrada)
-      ;(print *closedList*)
-      ;(print '********************************************)
-      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
-      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
-      ;(print '-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/-/)   
-      ;(read-line)    
       )
     )
   )
+;;
+;;  BUSQUEDA EN PROFUNDIDAD
+;;
 ;;==================================================================================
 ;;Pruebas
 ;;==================================================================================
@@ -551,8 +542,8 @@
 ;(agregarNodolistaCerrada nodoPrueba)
 ;(print *openList*)
 ;(print *Laberinto*)
-(read-datafile (string "./labCodificado2.txt"))
-;(read-datafile (string "/home/alberto/Desktop/salida.txt"))
+;(read-datafile (string "./labCodificado2.txt"))
+(read-datafile (string "/home/alberto/Desktop/salida.txt"))
 ;(print *Entrada*)
 ;(print *Salida*)
 (defvar nodoPrueba (crearNodo nil 7 'SinVisitar nil *Salida*))
