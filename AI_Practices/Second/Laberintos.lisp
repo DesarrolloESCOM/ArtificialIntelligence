@@ -12,6 +12,7 @@
 (defvar *EstadosNodos* '(SinVisitar Visitado EnEspera))
 (defvar *Solucion* nil)
 (defvar *debug* nil)
+(defvar *diagonales* nil)
 ;; SE CAMBIO Norte = 1, Sur = 3, Este = 2, Oeste = 4
 ;; Se define la casilla de inicio y la casilla de fin
 (defvar *Entrada* (list 0 0))
@@ -83,6 +84,13 @@
       )
     )
   )
+(defun limpiarListas ()
+    (setf *contadorNodo* 0)
+    (setf *closedList* nil)
+    (setf *openList* nil)
+    (setf *NivelDelArbol* 0)
+    (setf *Solucion* nil)
+   )
 ;==============================================================================
 (defstruct Nodo idNodo ancestroNodo costoNodo estadoNodo accionNodo posicionNodo nivelNodo)
 (defun append-if (&key elemento lista)
@@ -152,11 +160,15 @@
       ;movimientos basicos
       ;Se pueden obtener mediante la diferencia de la variable global y la información almacenada en el laberinto
       (setq listaMovimientosValidos (append (movimientosBasicos Nodo) listaMovimientosValidos))
-      ;movimientos diagonales
-      (setq listaMovimientosValidos (append listaMovimientosValidos (moverNoreste Nodo)))
-      (setq listaMovimientosValidos (append listaMovimientosValidos (moverNoroeste Nodo)))
-      (setq listaMovimientosValidos (append listaMovimientosValidos (moverSureste Nodo)))
-      (setq listaMovimientosValidos (append listaMovimientosValidos (moverSuroeste Nodo)))
+      ;movimientos diagonales*
+      (cond
+        (*diagonales*
+         (setq listaMovimientosValidos (append listaMovimientosValidos (moverNoreste Nodo)))
+         (setq listaMovimientosValidos (append listaMovimientosValidos (moverNoroeste Nodo)))
+         (setq listaMovimientosValidos (append listaMovimientosValidos (moverSureste Nodo)))
+         (setq listaMovimientosValidos (append listaMovimientosValidos (moverSuroeste Nodo))) 
+         )
+        )
       listaMovimientosValidos
     )
   )
@@ -467,17 +479,21 @@
       
     )
   )
+(defun obtenerNodoPorPosicion (nodoABuscar lista)
+  (let ((nodoEncontrado nil))
+    (loop for nodo in lista do
+          (cond 
+            ((equal (Nodo-posicionNodo nodo) (Nodo-posicionNodo nodoABuscar))
+             ;(print 'Se_ENCONTRO_POR_POSICION)
+             (return-from obtenerNodoPorPosicion T))
+            (T
+              ;(print 'NO_Se_ENCONTRO_POR_POSICION)
+              (return-from obtenerNodoPorPosicion nil))
+             )
+          )
+    )
+  )
 (defun rastreaSolucion (nodoARastrear)
-;  (if 
-;    (not (equal (Nodo-ancestroNodo nodoARastrear) nil)) ;; Aun no se llega al nodo origen
-;    (cons *Solucion* 
-;          (Nodo-accionNodo nodoARastrear) 
-;          (rastreaSolucion 
-;            (obtenerNodo *closedList* (Nodo-ancestroNodo nodoARastrear))
-;            )
-;          )
-;    )
-  ;(return-from rastreaSolucion *Solucion*)
     ;Se guarda la acción con la que se llego
     (setq *Solucion* (append *Solucion* (list (Nodo-accionNodo nodoARastrear))))
     ;(print nodoARastrear)
@@ -492,7 +508,6 @@
           (setq nodoAux (obtenerNodo *closedList* (Nodo-ancestroNodo nodoAux)))          
         )
       )
-    ;(print *contadorNodo*)
   )
 ;;==================================================================================
 ;;Algoritmos de Busqueda
@@ -511,6 +526,7 @@
       (setq movimientosValidos (obtenerMovimientosNodo nodoAux));;se obtienen los movimientos basicos del nodo
       (cond
         ((equal (Nodo-posicionNodo nodoAux) (Nodo-posicionNodo nodoDestino))
+         (setf *closedList* (sort *closedList* #'< :key #'Nodo-idNodo))
          (rastreaSolucion nodoAux)
           (return-from breadth_first_search *Solucion*)
          )
@@ -518,8 +534,31 @@
       ;;
       (loop for nodoVecino in movimientosValidos do
         (cond
-          ((not (or (numberp (position nodoVecino *openList*)) (numberp (position nodoVecino *closedList*))))  ;;Si no se encuentra en la lista abierta se añade
-            (agregarNodoListaAbierta nodoVecino 'queue)           
+          ((not (or (obtenerNodoPorPosicion nodoVecino *openList*) (obtenerNodoPorPosicion nodoVecino *closedList*)))
+            (cond
+              ((not(null *debug*))
+                (print '(string "*****************************************************NodoVecino"))
+                (print nodoVecino)
+                (print '(string "-------------------------CLOSED LIST --------------------------"))
+                (print *closedList*)
+                (print '(string "-------------------------OPEN LIST --------------------------"))
+                (print *openList*)
+                (print '(string "-----------------CONDICION UNO-----------------"))
+                (print  (obtenerNodoPorPosicion nodoVecino *openList*)) 
+                ;(print (not (or  )))
+                (print '(string "-----------------CONDICION DOS-----------------"))
+                (print  (obtenerNodoPorPosicion nodoVecino *closedList*))           
+                (print '(string "-----------------CONDICION FINAL-----------------"))
+                (print (not (or (obtenerNodoPorPosicion nodoVecino *openList*) (obtenerNodoPorPosicion nodoVecino *closedList*))))
+               )
+              ((equal (Nodo-posicionNodo nodoVecino) (Nodo-posicionNodo nodoDestino))
+                 (print (string "Encontró solución!!!"))
+                 (setf *closedList* (sort *closedList* #'< :key #'Nodo-idNodo))
+                 (rastreaSolucion nodoVecino)
+                 (return-from breadth_first_search *Solucion*)
+               )
+              ) 
+              (agregarNodoListaAbierta nodoVecino 'queue)   
             )
           )
         )
@@ -529,6 +568,72 @@
 ;;
 ;;  BUSQUEDA EN PROFUNDIDAD
 ;;
+(defun deep_first_search (nodoDestino)
+  (agregarNodoListaAbierta (crearNodo nil 0 'SinVisitar nil *Entrada* *NivelDelArbol*) 'queue);;Se anade el nodo a la frontera de busqueda   
+  (let ((nodoAux nil) (movimientosValidos nil)) 
+    (while (not (null *openList*))
+      (setq nodoAux (pop *openList*)) ;;se obtiene el único elemento de la lista abierta
+      (agregarNodoListaCerrada nodoAux);;El nodo que fue expandido se agrega a la lista cerrada   
+      (setq movimientosValidos (obtenerMovimientosNodo nodoAux));;se obtienen los movimientos basicos del nodo
+      ;(setq movimientosValidos (sort movimientosValidos #'< :key #'Nodo-idNodo))
+      (cond
+        ((equal (Nodo-posicionNodo nodoAux) (Nodo-posicionNodo nodoDestino))
+         (print (string "Encontró solución!!!"))
+         (setf *closedList* (sort *closedList* #'< :key #'Nodo-idNodo))
+         (rastreaSolucion nodoAux)
+          (return-from deep_first_search *Solucion*)
+         )
+        )
+      ;;
+      (loop for nodoVecino in movimientosValidos do
+        (cond
+          ((not (or (obtenerNodoPorPosicion nodoVecino *openList*) (obtenerNodoPorPosicion nodoVecino *closedList*))) ;;;Si no se encuentra en la lista abierta se añade 
+           (cond 
+             ((equal (Nodo-posicionNodo nodoVecino) (Nodo-posicionNodo nodoDestino))
+              (print (string "Encontró solución!!!"))
+              (agregarNodoListaCerrada nodoVecino)
+              (setf *closedList* (sort *closedList* #'< :key #'Nodo-idNodo))
+              (rastreaSolucion nodoVecino)
+              (return-from deep_first_search *Solucion*)
+              )
+             ((not (null *debug*))
+                (print '(string "*****************************************************NodoVecino"))
+                (print nodoVecino)
+                (print '(string "-------------------------CLOSED LIST --------------------------"))
+                (print *closedList*)
+                (print '(string "-------------------------OPEN LIST --------------------------"))
+                (print *openList*)
+                (print '(string "-----------------CONDICION UNO-----------------"))
+                (print  (obtenerNodoPorPosicion nodoVecino *openList*)) 
+                (print '(string "-----------------CONDICION DOS-----------------"))
+                (print  (obtenerNodoPorPosicion nodoVecino *closedList*))           
+                (print '(string "-----------------CONDICION FINAL-----------------"))
+                (print (not (or (obtenerNodoPorPosicion nodoVecino *openList*) (obtenerNodoPorPosicion nodoVecino *closedList*))))
+              )
+             )
+             (agregarNodoListaAbierta nodoVecino 'stack)           
+            )
+          (T
+            (cond 
+              ((not (null *debug*))
+                (print '********************************************************************************)
+                (print '********************************************************************************)
+                (print '********************************************************************************)
+                (print (string "No se puede insertar en openList"))
+                (print nodoVecino)
+                (print '(string "-------------------------CLOSED LIST --------------------------"))
+                (print *closedList*)
+                (print '(string "-------------------------OPEN LIST --------------------------"))
+                (print *openList*)   
+                ;(read-line)
+               ))
+            )
+          )
+        )
+        ;(print '----------------------se_acabaron_movimientos_nodoAux)
+      )
+    )
+  )
 ;;==================================================================================
 ;;Pruebas
 ;;==================================================================================
@@ -543,7 +648,7 @@
 ;(print *openList*)
 ;(print *Laberinto*)
 ;(read-datafile (string "./labCodificado2.txt"))
-(read-datafile (string "/home/alberto/Desktop/salida.txt"))
+(read-datafile (string "/home/alberto/Desktop/salida73.txt"))
 ;(print *Entrada*)
 ;(print *Salida*)
 (defvar nodoPrueba (crearNodo nil 7 'SinVisitar nil *Salida*))
@@ -557,7 +662,14 @@
 ;(print '-----------------------------------------------------------------------------------)
 ;(print (aref *Laberinto* 5 4))
 ;(print (breadth_first_search nodoPrueba))
+(setf *diagonales* T)
+(print 'BFS)
 (breadth_first_search nodoPrueba)
+;(deep_first_search nodoPrueba)
 (print (reverse *Solucion*))
 ;(print *closedList*)
+(limpiarListas)
+(print 'DFS)
+(deep_first_search nodoPrueba)
+(print (reverse *Solucion*))
 ;(print (obtenerNodo *closedList* 23))
