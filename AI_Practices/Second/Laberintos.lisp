@@ -130,9 +130,9 @@
     ((equal tipoOrdenamiento 'costoNodo)
       (setf *openList* (sort *openList* #'< :key #'Nodo-costoNodo))   
      )
-    (T
-     (setf *openList* (sort *openList* #'< :key #'Nodo-idNodo))
-     )
+    ;(T
+    ; (setf *openList* (sort *openList* #'< :key #'Nodo-idNodo))
+    ; )
     )
  )
 (defun agregarNodoListaCerrada(nodo)
@@ -662,7 +662,7 @@
 ;(print '-----------------------------------------------------------------------------------)
 ;(print (aref *Laberinto* 5 4))
 ;(print (breadth_first_search nodoPrueba))
-(setf *diagonales* T)
+;(setf *diagonales* T)
 (print 'BFS)
 (breadth_first_search nodoPrueba)
 ;(deep_first_search nodoPrueba)
